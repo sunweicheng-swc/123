@@ -29,8 +29,32 @@ const COPY = {
       next: "保留我的回答，继续",
     },
   },
+  radar: {
+    stage: "第三关 · 朋友雷达",
+    question: ["朋友说「我就随便问问」，", "你信吗？"],
+    choices: [
+      { label: "信啊，能有什么事", message: "警觉值 0，信任值拉满。", effect: "trust" },
+      { label: "这话一出，肯定有下文", message: "捕捉到一句「其实吧……」", effect: "signal" },
+    ],
+  },
+  clue: {
+    stage: "第四关 · 密封线索",
+    question: ["终极题还封着。", "你想先看哪条线索？"],
+    choices: [
+      { label: "给我一条正经的", message: "题目只有一句话。", effect: "formal" },
+      { label: "给我一条不正经的", message: "友情提示：答题时请管理好表情。", effect: "playful" },
+    ],
+  },
+  composure: {
+    stage: "第五关 · 最后准备",
+    question: ["最后一题就要来了。", "你打算怎么接招？"],
+    choices: [
+      { label: "面不改色", message: "镇定就位", effect: "calm" },
+      { label: "先笑为敬", message: "提前笑场，批准！", effect: "laugh" },
+    ],
+  },
   final: {
-    stage: "第三关 · 终极考验",
+    stage: "第六关 · 终极考验",
     intro: "最终考验，即将开始……",
     question: ["{name}", "是不是混蛋？"],
     yes: "那必然是啊",
@@ -65,13 +89,40 @@ const COPY = {
 };
 
 const INTRO_DURATION = 3350;
+const FEEDBACK_DURATION = 1500;
+const interludes = ["radar", "clue", "composure"];
+const levels = ["courage", "honesty", ...interludes, "final"];
 const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const sky = new NightSky(document.getElementById("stars"), document.getElementById("effects"), motion);
 const stage = document.getElementById("stage");
 stage.style.setProperty("--intro-duration", INTRO_DURATION + "ms");
-const scenes = Object.fromEntries(Array.from(document.querySelectorAll(".scene"), element => [element.dataset.scene, element]));
 const progress = document.getElementById("progress-steps");
 const count = document.querySelector("#progress-count strong");
+const template = document.getElementById("interlude-template");
+for (const name of interludes) {
+  const section = template.content.firstElementChild.cloneNode(true);
+  const title = section.querySelector("h1");
+  section.dataset.scene = name;
+  title.id = name + "-title";
+  title.dataset.question = name + ".question";
+  section.setAttribute("aria-labelledby", title.id);
+  section.querySelectorAll("[data-choice]").forEach(button => {
+    button.querySelector(".choice-text").dataset.copy = name + ".choices." + button.dataset.choice + ".label";
+  });
+  template.before(section);
+}
+const scenes = Object.fromEntries(Array.from(stage.querySelectorAll(".scene"), element => [element.dataset.scene, element]));
+const levelNumber = number => String(number).padStart(2, "0");
+document.getElementById("progress-total").textContent = levelNumber(levels.length);
+const progressSteps = levels.map(name => {
+  const item = document.createElement("li");
+  const label = document.createElement("span");
+  label.className = "sr-only";
+  label.textContent = COPY[name].stage;
+  item.append(label);
+  progress.append(item);
+  return item;
+});
 const stageLabel = document.getElementById("stage-label");
 const hint = document.getElementById("stage-hint");
 const orbital = document.getElementById("orbital");
@@ -83,7 +134,7 @@ const announcement = document.getElementById("announcement");
 const dialog = document.getElementById("decision-dialog");
 const scoreNumber = document.getElementById("score-number");
 const scoreFill = document.getElementById("score-fill");
-const routes = new Set(["courage", "honesty", "final", "victory", "integrity"]);
+const routes = new Set([...levels, "victory", "integrity"]);
 const timers = new Set();
 let current = "";
 let busy = false;
@@ -126,11 +177,11 @@ document.querySelectorAll("[data-question]").forEach(element => {
 });
 
 // 所有转场计时器统一登记，浏览器返回或重玩时可以一次取消。
-function later(callback, delay) {
+function later(callback, delay, { preserveReadingTime = false } = {}) {
   const timer = setTimeout(() => {
     timers.delete(timer);
     callback();
-  }, motion.matches ? 0 : delay);
+  }, motion.matches && !preserveReadingTime ? 0 : delay);
   timers.add(timer);
 }
 
@@ -166,6 +217,8 @@ function show(scene, { focus = true, keepFireworks = false } = {}) {
   confirmation.hidden = true;
   announcement.textContent = "";
   stage.classList.remove("confirming", "confirming-win", "shake");
+  delete stage.dataset.branch;
+  stage.querySelectorAll(".interlude-feedback:not([hidden])").forEach(feedback => { feedback.hidden = true; });
   stage.querySelectorAll(".pressed").forEach(button => button.classList.remove("pressed"));
   stage.querySelectorAll(":disabled").forEach(button => { button.disabled = false; });
 
@@ -176,11 +229,12 @@ function show(scene, { focus = true, keepFireworks = false } = {}) {
   document.body.dataset.theme = route;
   stage.dataset.scene = scene;
   stageLabel.textContent = COPY[route].stage;
-  orbital.hidden = !["courage", "honesty", "final"].includes(scene);
+  const levelIndex = levels.indexOf(scene);
+  orbital.hidden = levelIndex === -1;
 
-  const index = scene === "courage" ? 0 : scene === "honesty" ? 1 : 2;
-  count.textContent = String(index + 1).padStart(2, "0");
-  Array.from(progress.children).forEach((step, stepIndex) => {
+  const index = levelIndex === -1 ? levels.length - 1 : levelIndex;
+  count.textContent = levelNumber(index + 1);
+  progressSteps.forEach((step, stepIndex) => {
     step.classList.toggle("done", stepIndex < index);
     if (stepIndex === index) step.setAttribute("aria-current", "step");
     else step.removeAttribute("aria-current");
@@ -251,6 +305,21 @@ function confirmChoice(button, message, complete, isVictory = false) {
   }, 105);
 }
 
+function answerInterlude(button) {
+  const { message, effect } = COPY[current].choices[button.dataset.choice];
+  const scene = scenes[current];
+  const next = levels[levels.indexOf(current) + 1];
+  const feedback = scene.querySelector(".interlude-feedback");
+  lockScene(button);
+  later(() => {
+    stage.dataset.branch = effect;
+    feedback.textContent = message;
+    feedback.hidden = false;
+    announcement.textContent = message;
+    later(() => navigate(next, next === "final"), FEEDBACK_DURATION, { preserveReadingTime: true });
+  }, 95);
+}
+
 function openDecision(button, settings) {
   lockScene(button);
   stage.classList.add("shake");
@@ -276,14 +345,15 @@ function openDecision(button, settings) {
 
 const actions = {
   ready: button => confirmChoice(button, COPY.courage.confirmation, () => navigate("honesty")),
-  promise: button => confirmChoice(button, COPY.honesty.confirmation, () => navigate("final", true)),
+  promise: button => confirmChoice(button, COPY.honesty.confirmation, () => navigate("radar")),
   hesitate: button => openDecision(button, COPY.honesty.dialog),
+  interlude: answerInterlude,
   skip: () => show("final"),
   correct: button => confirmChoice(button, COPY.final.confirmation, () => navigate("victory"), true),
   doubt: button => openDecision(button, COPY.final.dialog),
   dismiss: () => closeDecision(),
   continue: () => {
-    if (current === "honesty") navigate("final", true);
+    if (current === "honesty") navigate("radar");
     else navigate("integrity");
   },
   restart: () => navigate("courage"),

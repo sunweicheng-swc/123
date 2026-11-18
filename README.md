@@ -1,10 +1,11 @@
 # 良心大考验
 
-一款仅供朋友间娱乐的三关互动问答小游戏。第三关以一段约 3.4 秒的 Canvas 烟花开场，可随时跳过。终极选择通往两个结局，玩家可以随时重玩。
+一款仅供朋友间娱乐的六关互动问答小游戏。第六关以一段约 3.4 秒的 Canvas 烟花开场，可随时跳过。终极选择通往两个结局，玩家可以随时重玩。
 
 - 第一关逐字亮出问题，按下开始按钮即可完成勇气认证。
 - 第二关可以直接确认，也可以在犹豫提示里返回，或保留原回答继续。
-- 第三关可以点按背景放一朵烟花，也可以使用「点亮夜空」按钮。
+- 第三至第五关依次是朋友雷达、密封线索和最后准备。每个选项都有自己的文案与反馈动画，约 1.5 秒后自动进入下一关。两条路径都会进入同一段终章烟花。
+- 第六关可以点按背景放一朵烟花，也可以使用「点亮夜空」按钮。
 - 奖励结局有烟花、纸屑、奖杯和动态计分。另一种结局可以回去重选，也可以坚持答案并结束游戏。
 - 支持键盘操作、Esc 关闭弹窗、浏览器返回和刷新恢复。系统开启减少动态效果时，直接进入终极问题，奖励页的「重看烟花」会展示静态烟花留影。
 
@@ -22,7 +23,7 @@ python3 -m http.server 8000 --bind 127.0.0.1
 
 ```text
 .
-├── index.html         # 三关、两种结局和提示弹窗
+├── index.html         # 六关、两种结局和提示弹窗
 ├── css/
 │   └── style.css      # 夜空主题、响应式布局和界面动画
 ├── js/
@@ -41,13 +42,14 @@ python3 -m http.server 8000 --bind 127.0.0.1
 | 要改的内容 | 配置位置 |
 | --- | --- |
 | 网页标题和左上角游戏名 | `COPY.title` |
-| 第三关的人名 | `COPY.name` |
-| 三关问题和按钮 | `COPY.courage`、`COPY.honesty`、`COPY.final` |
+| 终极题的人名 | `COPY.name` |
+| 原有关卡的问题和按钮 | `COPY.courage`、`COPY.honesty`、`COPY.final` |
+| 三个过渡关卡的问题和反馈 | `COPY.radar`、`COPY.clue`、`COPY.composure` |
 | 犹豫和重选提示 | `COPY.honesty.dialog`、`COPY.final.dialog` |
 | 两种结局 | `COPY.victory`、`COPY.integrity` |
 | 重玩、跳过、底部提示等公共文案 | `COPY.ui` |
 
-问题可以写为字符串，也可以用字符串数组指定换行。第三关问题里的 `{name}` 会自动替换成配置中的姓名。修改 `INTRO_DURATION` 可以调整烟花开场时长，单位为毫秒。烟花的颜色与发射节奏分别在 `js/fireworks.js` 的 `palette` 和 `setMode()`、`scheduleCelebration()` 中。
+问题可以写为字符串，也可以用字符串数组指定换行。终极题里的 `{name}` 会自动替换成配置中的姓名。过渡关卡的 `choices` 中，`label` 是按钮文案，`message` 是选择后的提示，`effect` 对应 CSS 动画。通过 `FEEDBACK_DURATION` 和 `INTRO_DURATION` 可调整反馈停留时间与烟花开场时长，单位均为毫秒。烟花的颜色与发射节奏分别在 `js/fireworks.js` 的 `palette` 和 `setMode()`、`scheduleCelebration()` 中。
 
 ## 发布到 GitHub Pages
 

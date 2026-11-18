@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#110e1a">
-  <meta name="description" content="三关答题，两种结局。一个仅供朋友间娱乐的互动问答小游戏。">
+  <meta name="description" content="六关答题，两种结局。一个仅供朋友间娱乐的互动问答小游戏。">
   <title>良心大考验</title>
   <link rel="icon" href="./assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./css/style.css">
@@ -21,12 +21,8 @@
         <span data-copy="title"></span>
       </div>
       <div class="progress" role="group" data-label="ui.progress">
-        <span id="progress-count" class="progress-count" aria-hidden="true"><strong>01</strong> / 03</span>
-        <ol id="progress-steps" class="progress-steps">
-          <li><span class="sr-only" data-copy="courage.stage"></span></li>
-          <li><span class="sr-only" data-copy="honesty.stage"></span></li>
-          <li><span class="sr-only" data-copy="final.stage"></span></li>
-        </ol>
+        <span id="progress-count" class="progress-count" aria-hidden="true"><strong>01</strong> / <span id="progress-total"></span></span>
+        <ol id="progress-steps" class="progress-steps"></ol>
       </div>
     </header>
 
@@ -64,6 +60,25 @@
             </div>
           </div>
         </section>
+
+        <template id="interlude-template">
+          <section class="scene question-scene interlude-scene" hidden>
+            <div class="question-content">
+              <h1 class="question" tabindex="-1"></h1>
+              <div class="interlude-answer">
+                <div class="actions choices">
+                  <button class="button button-primary" type="button" data-action="interlude" data-choice="0">
+                    <span class="choice-key" aria-hidden="true">A</span><span class="choice-text"></span><span class="arrow" aria-hidden="true">↗</span>
+                  </button>
+                  <button class="button button-secondary" type="button" data-action="interlude" data-choice="1">
+                    <span class="choice-key" aria-hidden="true">B</span><span class="choice-text"></span><span class="arrow" aria-hidden="true">↗</span>
+                  </button>
+                </div>
+                <p class="interlude-feedback" hidden></p>
+              </div>
+            </div>
+          </section>
+        </template>
 
         <section class="scene intro-scene centered" data-scene="intro" aria-labelledby="intro-title" hidden>
           <span class="intro-star" aria-hidden="true">✧</span>
@@ -129,6 +144,22 @@
             <div class="rose-shadow"></div><div class="rose-core"></div>
             <div class="orbit-symbol orbit-check"><span>✓</span></div>
             <div class="orbit-symbol orbit-question"><span>?</span></div>
+            <div class="interlude-art radar-art">
+              <div class="radar-sweep"></div>
+              <i class="radar-center"></i><i class="radar-contact contact-one"></i><i class="radar-contact contact-two"></i>
+            </div>
+            <div class="interlude-art clue-art">
+              <div class="envelope">
+                <div class="envelope-flap"></div>
+                <div class="clue-paper"><span class="clue-star">✧</span><span class="clue-smile">☺</span></div>
+                <div class="envelope-front"></div>
+                <div class="envelope-seal">✧</div>
+              </div>
+            </div>
+            <div class="interlude-art composure-art">
+              <div class="face-frame"></div>
+              <div class="face-neutral">◇</div><div class="face-check">✓</div><div class="face-laugh">🤭</div>
+            </div>
           </div>
         </div>
 
